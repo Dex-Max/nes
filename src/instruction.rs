@@ -41,7 +41,7 @@ impl Instruction {
 
             0x29 => Instruction(AND, IMM, 2),
             0x25 => Instruction(AND, ZP, 3),
-            0x39 => Instruction(AND, ZPX, 4),
+            0x35 => Instruction(AND, ZPX, 4),
             0x2D => Instruction(AND, ABS, 4),
             0x3D => Instruction(AND, ABX, 4),
             0x39 => Instruction(AND, ABY, 4),
@@ -218,28 +218,26 @@ impl Instruction {
 impl Cpu {
     pub fn execute_instruction(&mut self, instr: Instruction) {
         let Instruction(opcode, mode, cycles) = instr;
+        let (addr, arg) = self.get_args(&mode);
 
         match opcode {
             ADC => {
-                let (_ , arg) = self.get_args(&mode);
-                let res = (self.a as u16) + arg + (if self.get_flag(Flag::Carry) { 1 } else { 0 });
+                let res: u16 = (self.a as u16) + (arg as u16) + (if self.get_flag(Flag::Carry) { 1 } else { 0 });
 
                 self.set_flag(Flag::Carry, res > 0xff);
                 self.set_flag(Flag::Zero, res == 0);
-                self.set_flag(Flag::Overflow, (self.a as u16 ^ res) & (arg ^ res) & 0x80 == 0x80);
+                self.set_flag(Flag::Overflow, (self.a as u16 ^ res) & (arg as u16 ^ res) & 0x80 == 0x80);
                 self.set_flag(Flag::Negative, res & 0x80 == 0x80);
                 self.a = res as u8;
             },
             AND => {
-                let (_ , arg) = self.get_args(&mode);
-                let res = (self.a as u16) & arg;
+                let res = self.a & arg;
 
                 self.set_flag(Flag::Zero, res == 0);
                 self.set_flag(Flag::Negative, res & 0x80 == 0x80);
-                self.a = res as u8;
+                self.a = res;
             }
             ASL => {
-                let (addr, arg) = self.get_args(&mode);
                 let res = arg << 1;
 
                 self.set_flag(Flag::Carry, arg & 0x80 == 0x80);
@@ -248,10 +246,10 @@ impl Cpu {
 
                 match mode {
                     ACC => {
-                        self.a = res as u8;
+                        self.a = res;
                     }
                     _ => {
-                        self.bus.write_byte(addr, res as u8);
+                        self.bus.write_byte(addr, res);
                     }
                 }
             }
@@ -259,36 +257,37 @@ impl Cpu {
         }
     }
 
-    pub fn get_args(&mut self, mode: &AddrMode) -> (u16, u16) {
+    pub fn get_args(&mut self, mode: &AddrMode) -> (u16, u8) {
         match mode {
             ACC => {
-                (0, self.a as u16)
+                (0, self.a)
             }
-
             IMM => {
                 let arg = self.bus.read_byte(self.pc);
                 self.pc += 1;
 
-                (0, arg as u16)
+                (0, arg)
             }
-
             ZP => {
-                let addr = self.bus.read_byte(self.pc);
+                let addr = self.bus.read_byte(self.pc) as u16;
                 self.pc += 1;
 
-                (addr as u16, self.bus.read_byte(addr as u16) as u16)
+                (addr as u16, self.bus.read_byte(addr as u16))
             }
             ZPX => {
-                let addr = self.bus.read_byte(self.pc);
+                let addr = self.bus.read_byte(self.pc) as u16;
                 self.pc += 1;
 
-                (addr as u16, self.bus.read_byte(addr.wrapping_add(self.x) as u16) as u16)
+                (addr as u16, self.bus.read_byte(addr.wrapping_add(self.x as u16)))
             }
             ZPY => {
-                let addr = self.bus.read_byte(self.pc);
+                let addr = self.bus.read_byte(self.pc) as u16;
                 self.pc += 1;
 
-                (addr as u16, self.bus.read_byte(addr.wrapping_add(self.y) as u16) as u16)
+                (addr as u16, self.bus.read_byte(addr.wrapping_add(self.y as u16)))
+            }
+            _ => {
+                panic!("Not implemented")
             }
         }
     }

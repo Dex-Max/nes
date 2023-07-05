@@ -30,10 +30,20 @@ impl Cpu {
             x: 0,
             y: 0,
             pc: 0,
-            sp: 0,
+            sp: 0xff,
             p: 0,
             bus
         }
+    }
+
+    pub fn push_stack(&mut self, value: u8) {
+        self.bus.write_byte(0x0100 + self.sp as u16, value);
+        self.sp.wrapping_sub(1);
+    }
+
+    pub fn pop_stack(&mut self) -> u8 {
+        self.sp.wrapping_add(1);
+        return self.bus.read_byte(0x0100 + self.sp as u16);
     }
 
     pub fn get_flag(&self, flag: Flag) -> bool {

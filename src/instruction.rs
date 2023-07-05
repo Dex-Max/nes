@@ -286,6 +286,37 @@ impl Cpu {
 
                 (addr as u16, self.bus.read_byte(addr.wrapping_add(self.y as u16)))
             }
+            REL => {
+                let offset = self.bus.read_byte(self.pc);
+
+                (0, offset);
+            }
+            ABS => {
+                let lower_byte = self.bus.read_byte(self.pc);
+                let upper_byte = self.bus.read_byte(self.pc + 1);
+                let addr = ((upper_byte as u16) << 8) & lower_byte as u16
+
+                (addr, 0);
+            }
+            ABX => {
+                // TODO: Deal with overflow
+                let lower_byte = self.bus.read_byte(self.pc);
+                let upper_byte = self.bus.read_byte(self.pc + 1);
+                let addr = ((upper_byte as u16) << 8) & lower_byte as u16
+
+                (addr + self.x as u16, 0);
+                
+            }
+            ABY => {
+                // TODO: Deal with overflow
+                let lower_byte = self.bus.read_byte(self.pc);
+                let upper_byte = self.bus.read_byte(self.pc + 1);
+                let addr = ((upper_byte as u16) << 8) & lower_byte as u16
+
+                (addr + self.y as u16, 0);
+                
+            }
+
             _ => {
                 panic!("Not implemented")
             }

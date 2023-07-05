@@ -253,6 +253,23 @@ impl Cpu {
                     }
                 }
             }
+            BCC => {
+                if !self.get_flag(Flag::Carry) {
+                    self.pc += arg as u16;
+                }
+            }
+            BCS => {
+                if self.get_flag(Flag::Carry) {
+                    self.pc += arg as u16;
+                }
+            }
+            BEQ => {
+                if self.get_flag(Flag::Zero) {
+                    self.pc += arg as u16;
+                }
+            }
+
+
             _ => panic!("Not implemented")
         }
     }
@@ -272,49 +289,50 @@ impl Cpu {
                 let addr = self.bus.read_byte(self.pc) as u16;
                 self.pc += 1;
 
-                (addr as u16, self.bus.read_byte(addr as u16))
+                (0, self.bus.read_byte(addr))
             }
             ZPX => {
-                let addr = self.bus.read_byte(self.pc) as u16;
+                let arg = self.bus.read_byte(self.pc);
+                let addr = arg.wrapping_add(self.x) as u16;
                 self.pc += 1;
 
-                (addr as u16, self.bus.read_byte(addr.wrapping_add(self.x as u16)))
+                (0, self.bus.read_byte(addr))
             }
             ZPY => {
-                let addr = self.bus.read_byte(self.pc) as u16;
+                let arg = self.bus.read_byte(self.pc);
+                let addr = arg.wrapping_add(self.y) as u16;
                 self.pc += 1;
 
-                (addr as u16, self.bus.read_byte(addr.wrapping_add(self.y as u16)))
+                (0, self.bus.read_byte(addr))
             }
             REL => {
                 let offset = self.bus.read_byte(self.pc);
 
-                (0, offset);
+                (0, offset)
             }
             ABS => {
                 let lower_byte = self.bus.read_byte(self.pc);
                 let upper_byte = self.bus.read_byte(self.pc + 1);
-                let addr = ((upper_byte as u16) << 8) & lower_byte as u16
+                let addr = ((upper_byte as u16) << 8) & lower_byte as u16;
+                self.pc += 2;
 
-                (addr, 0);
+                (addr, 0)
             }
             ABX => {
                 // TODO: Deal with overflow
                 let lower_byte = self.bus.read_byte(self.pc);
                 let upper_byte = self.bus.read_byte(self.pc + 1);
-                let addr = ((upper_byte as u16) << 8) & lower_byte as u16
+                let addr = ((upper_byte as u16) << 8) & lower_byte as u16;
 
-                (addr + self.x as u16, 0);
-                
+                (addr + self.x as u16, 0)
             }
             ABY => {
                 // TODO: Deal with overflow
                 let lower_byte = self.bus.read_byte(self.pc);
                 let upper_byte = self.bus.read_byte(self.pc + 1);
-                let addr = ((upper_byte as u16) << 8) & lower_byte as u16
+                let addr = ((upper_byte as u16) << 8) & lower_byte as u16;
 
-                (addr + self.y as u16, 0);
-                
+                (addr + self.y as u16, 0)
             }
 
             _ => {

@@ -255,18 +255,21 @@ impl Cpu {
             }
             BCC => {
                 if !self.get_flag(Flag::Carry) {
-                    self.pc += arg as u16;
+                    self.pc.wrapping_add(arg as u16);
                 }
             }
             BCS => {
                 if self.get_flag(Flag::Carry) {
-                    self.pc += arg as u16;
+                    self.pc.wrapping_add(arg as u16);
                 }
             }
             BEQ => {
                 if self.get_flag(Flag::Zero) {
-                    self.pc += arg as u16;
+                    self.pc.wrapping_add(arg as u16);
                 }
+            }
+            BIT => {
+
             }
 
 

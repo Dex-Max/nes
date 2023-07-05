@@ -316,26 +316,26 @@ impl Cpu {
             ABS => {
                 let lower_byte = self.bus.read_byte(self.pc);
                 let upper_byte = self.bus.read_byte(self.pc + 1);
-                let addr = ((upper_byte as u16) << 8) & lower_byte as u16;
+                let addr = ((upper_byte as u16) << 8) | lower_byte as u16;
                 self.pc += 2;
 
-                (addr, 0)
+                (addr, self.bus.read_byte(addr))
             }
             ABX => {
                 // TODO: Deal with overflow
                 let lower_byte = self.bus.read_byte(self.pc);
                 let upper_byte = self.bus.read_byte(self.pc + 1);
-                let addr = ((upper_byte as u16) << 8) & lower_byte as u16;
+                let addr = (((upper_byte as u16) << 8) | lower_byte as u16) + self.x as u16;
 
-                (addr + self.x as u16, 0)
+                (addr, self.bus.read_byte(addr))
             }
             ABY => {
                 // TODO: Deal with overflow
                 let lower_byte = self.bus.read_byte(self.pc);
                 let upper_byte = self.bus.read_byte(self.pc + 1);
-                let addr = ((upper_byte as u16) << 8) & lower_byte as u16;
+                let addr = (((upper_byte as u16) << 8) | lower_byte as u16) + self.y as u16;
 
-                (addr + self.y as u16, 0)
+                (addr, self.bus.read_byte(addr))
             }
 
             _ => {
